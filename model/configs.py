@@ -15,7 +15,7 @@ optimizer_dict = {'RMSprop': optim.RMSprop, 'Adam': optim.Adam}
 rnn_dict = {'lstm': nn.LSTM, 'gru': nn.GRU}
 rnncell_dict = {'lstm': StackedLSTMCell, 'gru': StackedGRUCell}
 username = Path.home().name
-save_dir = Path(f'/data1/{username}/conversation/')
+save_dir = Path(f'.checkpoints/{username}/conversation/')
 
 
 def str2bool(v):
@@ -141,7 +141,7 @@ def get_config(parse=True, **optional_kwargs):
     parser.add_argument('--save_every_epoch', type=int, default=1)
 
     # Data
-    parser.add_argument('--data', type=str, default='ubuntu')
+    parser.add_argument('--data', type=str, default='cornell')
 
     # Parse arguments
     if parse:
