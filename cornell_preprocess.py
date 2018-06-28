@@ -29,9 +29,9 @@ def prepare_cornell_data():
 
     # Prepare Dialog data
     if not cornell_dir.exists():
-        print(f'Downloading {zip_url} to {zipfile_path}')
+        print('Downloading', zip_url, 'to ', zipfile_path)
         urlretrieve(zip_url, zipfile_path)
-        print(f'Successfully downloaded {zipfile_path}')
+        print('Successfully downloaded', zipfile_path)
 
         zip_ref = ZipFile(zipfile_path, 'r')
         zip_ref.extractall(datasets_dir)
@@ -123,9 +123,9 @@ def train_valid_test_split_by_conversation(conversations, split_ratio=[0.8, 0.1,
     valid = conversations[train_split:valid_split]
     test = conversations[valid_split:]
 
-    print(f'Train set: {len(train)} conversations')
-    print(f'Validation set: {len(valid)} conversations')
-    print(f'Test set: {len(test)} conversations')
+    print('Train set:', len(train), 'conversations')
+    print('Validation set:', len(valid), 'conversations')
+    print('Test set:', len(test), 'conversations')
 
     return train, valid, test
 
@@ -213,11 +213,11 @@ if __name__ == '__main__':
             pickle.dump(obj, f)
 
     for split_type, conv_objects in [('train', train), ('valid', valid), ('test', test)]:
-        print(f'Processing {split_type} dataset...')
+        print('Processing', split_type, 'dataset...')
         split_data_dir = cornell_dir.joinpath(split_type)
         split_data_dir.mkdir(exist_ok=True)
 
-        print(f'Tokenize.. (n_workers={n_workers})')
+        print('Tokenize.. (n_workers=', n_workers, ')')
         def _tokenize_conversation(conv):
             return tokenize_conversation(conv['lines'])
         with Pool(n_workers) as pool:
