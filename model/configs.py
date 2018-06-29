@@ -10,7 +10,11 @@ from layers.rnncells import StackedLSTMCell, StackedGRUCell
 
 project_dir = Path(__file__).resolve().parent.parent
 data_dir = project_dir.joinpath('datasets')
-data_dict = {'cornell': data_dir.joinpath('cornell'), 'ubuntu': data_dir.joinpath('ubuntu')}
+data_dict = {
+    'cornell': data_dir.joinpath('cornell'),
+    'ubuntu': data_dir.joinpath('ubuntu'),
+    'trump': data_dir.joinpath('trump')
+}
 optimizer_dict = {'RMSprop': optim.RMSprop, 'Adam': optim.Adam}
 rnn_dict = {'lstm': nn.LSTM, 'gru': nn.GRU}
 rnncell_dict = {'lstm': StackedLSTMCell, 'gru': StackedGRUCell}
@@ -141,7 +145,7 @@ def get_config(parse=True, **optional_kwargs):
     parser.add_argument('--save_every_epoch', type=int, default=1)
 
     # Data
-    parser.add_argument('--data', type=str, default='cornell')
+    parser.add_argument('--data', type=str, default='trump')
 
     # Parse arguments
     if parse:
