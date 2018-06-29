@@ -703,7 +703,7 @@ class VariationalSolver(Solver):
             # weights: [n_samples]
             weights = torch.stack(weights, 0)
             m = np.floor(weights.max())
-            weights = np.log(torch.exp(weights - m).sum())
+            weights = np.log(torch.exp(weights - m).type(get_type()).sum())
             weights = m + weights - np.log(self.config.importance_sample)
             weight_history.append(weights)
 
@@ -719,3 +719,8 @@ class VariationalSolver(Solver):
 
         return word_perplexity
 
+
+def get_type():
+    if torch.cuda.is_available():
+        return torch.cuda.FloatTensor
+    return torch.FloatTensor
