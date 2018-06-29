@@ -21,7 +21,7 @@ if __name__ == '__main__':
     print('Loading Vocabulary...')
     vocab = Vocab()
     vocab.load(config.word2id_path, config.id2word_path)
-    print(f'Vocabulary size: {vocab.vocab_size}')
+    print('Vocabulary size:', vocab.vocab_size)
 
     config.vocab_size = vocab.vocab_size
 
