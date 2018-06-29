@@ -4,7 +4,6 @@ from .convert import to_var
 
 
 def pad(tensor, length):
-    print("Pad, type: ", get_type())
     if isinstance(tensor, Variable):
         var = tensor
         if length > var.size(0):
