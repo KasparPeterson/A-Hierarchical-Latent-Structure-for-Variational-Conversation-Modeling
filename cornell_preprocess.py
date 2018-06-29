@@ -5,6 +5,7 @@ import argparse
 import pickle
 import random
 import os
+import preprocess_utils
 from urllib.request import urlretrieve
 from zipfile import ZipFile
 from pathlib import Path
@@ -17,6 +18,7 @@ cornell_dir = datasets_dir.joinpath('cornell/')
 
 # Tokenizer
 tokenizer = Tokenizer('spacy')
+
 
 def prepare_cornell_data():
     """Download and unpack dialogs"""
@@ -103,67 +105,9 @@ def loadConversations(fileName, lines,
     return conversations
 
 
-def train_valid_test_split_by_conversation(conversations, split_ratio=[0.8, 0.1, 0.1]):
-    """Train/Validation/Test split by randomly selected movies"""
-
-    train_ratio, valid_ratio, test_ratio = split_ratio
-    assert train_ratio + valid_ratio + test_ratio == 1.0
-
-    n_conversations = len(conversations)
-
-    # Random shuffle movie list
-    random.seed(0)
-    random.shuffle(conversations)
-
-    # Train / Validation / Test Split
-    train_split = int(n_conversations * train_ratio)
-    valid_split = int(n_conversations * (train_ratio + valid_ratio))
-
-    train = conversations[:train_split]
-    valid = conversations[train_split:valid_split]
-    test = conversations[valid_split:]
-
-    print('Train set:', len(train), 'conversations')
-    print('Validation set:', len(valid), 'conversations')
-    print('Test set:', len(test), 'conversations')
-
-    return train, valid, test
-
-
 def tokenize_conversation(lines):
     sentence_list = [tokenizer(line['text']) for line in lines]
     return sentence_list
-
-
-def pad_sentences(conversations, max_sentence_length=30, max_conversation_length=10):
-    def pad_tokens(tokens, max_sentence_length=max_sentence_length):
-        n_valid_tokens = len(tokens)
-        if n_valid_tokens > max_sentence_length - 1:
-            tokens = tokens[:max_sentence_length - 1]
-        n_pad = max_sentence_length - n_valid_tokens - 1
-        tokens = tokens + [EOS_TOKEN] + [PAD_TOKEN] * n_pad
-        return tokens
-
-    def pad_conversation(conversation):
-        conversation = [pad_tokens(sentence) for sentence in conversation]
-        return conversation
-
-    all_padded_sentences = []
-    all_sentence_length = []
-
-    for conversation in conversations:
-        if len(conversation) > max_conversation_length:
-            conversation = conversation[:max_conversation_length]
-        sentence_length = [min(len(sentence) + 1, max_sentence_length) # +1 for EOS token
-                           for sentence in conversation]
-        all_sentence_length.append(sentence_length)
-
-        sentences = pad_conversation(conversation)
-        all_padded_sentences.append(sentences)
-
-    sentences = all_padded_sentences
-    sentence_length = all_sentence_length
-    return sentences, sentence_length
 
 
 if __name__ == '__main__':
@@ -206,7 +150,11 @@ if __name__ == '__main__':
     print('Number of conversations:', len(conversations))
     print('Train/Valid/Test Split')
     # train, valid, test = train_valid_test_split_by_movie(conversations, split_ratio)
-    train, valid, test = train_valid_test_split_by_conversation(conversations, split_ratio)
+
+    with open("example.txt", "w") as f:
+        f.write("%s\n" % conversations)
+
+    train, valid, test = preprocess_utils.train_valid_test_split_by_conversation(conversations, split_ratio)
 
     def to_pickle(obj, path):
         with open(path, 'wb') as f:
@@ -227,7 +175,7 @@ if __name__ == '__main__':
         conversation_length = [min(len(conv['lines']), max_conv_len)
                                for conv in conv_objects]
 
-        sentences, sentence_length = pad_sentences(
+        sentences, sentence_length = preprocess_utils.pad_sentences(
             conversations,
             max_sentence_length=max_sent_len,
             max_conversation_length=max_conv_len)
@@ -238,7 +186,6 @@ if __name__ == '__main__':
         to_pickle(sentence_length, split_data_dir.joinpath('sentence_length.pkl'))
 
         if split_type == 'train':
-
             print('Save Vocabulary...')
             vocab = Vocab(tokenizer)
             vocab.add_dataframe(conversations)

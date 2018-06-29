@@ -10,6 +10,7 @@ import os
 import argparse
 import tarfile
 import pickle
+import preprocess_utils
 
 from tqdm import tqdm
 import pandas as pd
@@ -134,40 +135,6 @@ def read_and_tokenize(dialog_path, min_turn=3):
     return dialog #, users
 
 
-def pad_sentences(conversations, max_sentence_length=30, max_conversation_length=10):
-
-    def pad_tokens(tokens, max_sentence_length=max_sentence_length):
-        n_valid_tokens = len(tokens)
-        if n_valid_tokens > max_sentence_length - 1:
-            tokens = tokens[:max_sentence_length - 1]
-        n_pad = max_sentence_length - n_valid_tokens - 1
-        tokens = tokens + [EOS_TOKEN] + [PAD_TOKEN] * n_pad
-        return tokens
-
-    def pad_conversation(conversation):
-        conversation = [pad_tokens(sentence) for sentence in conversation]
-        return conversation
-
-    all_padded_sentences = []
-    all_sentence_length = []
-
-    for conversation in conversations:
-        if len(conversation) > max_conversation_length:
-            conversation = conversation[:max_conversation_length]
-        sentence_length = [min(len(sentence) + 1, max_sentence_length) # +1 for EOS token
-                           for sentence in conversation]
-        all_sentence_length.append(sentence_length)
-
-        sentences = pad_conversation(conversation)
-        all_padded_sentences.append(sentences)
-
-    # [n_conversations, n_sentence (various), max_sentence_length]
-    sentences = all_padded_sentences
-    # [n_conversations, n_sentence (various)]
-    sentence_length = all_sentence_length
-    return sentences, sentence_length
-
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
@@ -228,7 +195,7 @@ if __name__ == '__main__':
         conversation_length = [min(len(conversation), max_conv_len)
                                for conversation in conversations]
 
-        sentences, sentence_length = pad_sentences(
+        sentences, sentence_length = preprocess_utils.pad_sentences(
             conversations,
             max_sentence_length=max_sent_len,
             max_conversation_length=max_conv_len)
