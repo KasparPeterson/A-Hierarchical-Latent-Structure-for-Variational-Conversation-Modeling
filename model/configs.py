@@ -13,7 +13,10 @@ data_dir = project_dir.joinpath('datasets')
 data_dict = {
     'cornell': data_dir.joinpath('cornell'),
     'ubuntu': data_dir.joinpath('ubuntu'),
-    'trump': data_dir.joinpath('trump')
+    'trump': data_dir.joinpath('trump'),
+    'context-test': data_dir.joinpath('context-test'),
+    'twitter': data_dir.joinpath('twitter'),
+    'daily-conversations': data_dir.joinpath('daily-conversations')
 }
 optimizer_dict = {'RMSprop': optim.RMSprop, 'Adam': optim.Adam}
 rnn_dict = {'lstm': nn.LSTM, 'gru': nn.GRU}
@@ -93,7 +96,7 @@ def get_config(parse=True, **optional_kwargs):
     parser.add_argument('--batch_size', type=int, default=80)
     parser.add_argument('--eval_batch_size', type=int, default=80)
     parser.add_argument('--n_epoch', type=int, default=30)
-    parser.add_argument('--learning_rate', type=float, default=1e-4)
+    parser.add_argument('--learning_rate', type=float, default=1e-3)
     parser.add_argument('--optimizer', type=str, default='Adam')
     parser.add_argument('--clip', type=float, default=1.0)
     parser.add_argument('--checkpoint', type=str, default=None)
@@ -145,7 +148,7 @@ def get_config(parse=True, **optional_kwargs):
     parser.add_argument('--save_every_epoch', type=int, default=1)
 
     # Data
-    parser.add_argument('--data', type=str, default='trump')
+    parser.add_argument('--data', type=str, default='daily-conversations')
 
     # Parse arguments
     if parse:
