@@ -46,7 +46,7 @@ def get_conversations_with_contexts():
     result = []
     conversation = []
     last = ""
-    with open(INPUT_FILE, "r") as f:
+    with open(INPUT_FILE, "r", encoding="utf-8") as f:
         for line in f:
             line = line.replace("\n", "")
             if len(line) > 0:
@@ -75,7 +75,7 @@ if __name__ == '__main__':
     n_workers = os.cpu_count()
 
     conversations = get_conversations_with_contexts()
-    with open(OUTPUT_FILE, "w") as f:
+    with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
         for c in conversations:
             f.write("%s\n" % c)
 
