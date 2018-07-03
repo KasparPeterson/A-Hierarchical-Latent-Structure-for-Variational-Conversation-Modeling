@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 import models
 from layers import masked_cross_entropy
-from utils import to_var, time_desc_decorator, TensorboardWriter, pad_and_pack, normal_kl_div, to_bow, bag_of_words_loss, normal_kl_div, embedding_metric
+from utils import to_var, time_desc_decorator, TensorboardWriter, pad_and_pack, normal_kl_div, to_bow, bag_of_words_loss, normal_kl_div, embedding_metric, similarity_scorer
 import os
 from tqdm import tqdm
 from math import isnan
@@ -119,6 +119,30 @@ class Solver(object):
                 loss=validation_loss,
                 step_i=epoch_i + 1,
                 name='validation_loss')
+
+        average_bleu = getattr(self, "average_bleu", None)
+        if average_bleu is not None:
+            self.writer.update_loss(
+                loss=average_bleu,
+                step_i=epoch_i + 1,
+                name='average_bleu'
+            )
+
+        average_sequences = getattr(self, "average_sequences", None)
+        if average_sequences is not None:
+            self.writer.update_loss(
+                loss=average_sequences,
+                step_i=epoch_i + 1,
+                name='average_sequences'
+            )
+
+        average_levenshteins = getattr(self, "average_levenshteins", None)
+        if average_levenshteins is not None:
+            self.writer.update_loss(
+                loss=average_levenshteins,
+                step_i=epoch_i + 1,
+                name='average_levenshteins'
+            )
 
     @time_desc_decorator('Training Start!')
     def train(self):
@@ -569,12 +593,17 @@ class VariationalSolver(Solver):
                 print(s)
             print('')
 
+        return self.calculate_scores(generated_sentences, target_sentences)
+
     def evaluate(self):
         self.model.eval()
         batch_loss_history = []
         recon_loss_history = []
         kl_div_history = []
         bow_loss_history = []
+        bleu_history = []
+        sequences_history = []
+        levenshteins_history = []
         n_total_words = 0
         for batch_i, (conversations, conversation_length, sentence_length) \
                 in enumerate(tqdm(self.eval_data_loader, ncols=80)):
@@ -606,11 +635,15 @@ class VariationalSolver(Solver):
                 input_sentences = [sent for conv in input_conversations for sent in conv]
                 with torch.no_grad():
                     input_sentences = to_var(torch.LongTensor(input_sentences))
-                self.generate_sentence(sentences,
+                scores = self.generate_sentence(sentences,
                                        sentence_length,
                                        input_conversation_length,
                                        input_sentences,
                                        target_sentences)
+
+                bleu_history += scores["bleus"]
+                sequences_history += scores["sequences"]
+                levenshteins_history += scores["levenshteins"]
 
             sentence_logits, kl_div, _, _ = self.model(
                 sentences,
@@ -644,6 +677,14 @@ class VariationalSolver(Solver):
             print_str += f', bow_loss = {epoch_bow_loss:.3f}'
         print(print_str)
         print('\n')
+
+        self.average_bleu = sum(bleu_history) / len(bleu_history)
+        self.average_sequences = sum(sequences_history) / len(sequences_history)
+        self.average_levenshteins = sum(levenshteins_history) / len(levenshteins_history)
+        print("Average scores:")
+        print(" -> bleu:", self.average_bleu)
+        print(" -> sequence:", self.average_sequences)
+        print(" -> levenshteins:", self.average_levenshteins)
 
         return epoch_loss
 
@@ -718,6 +759,19 @@ class VariationalSolver(Solver):
         print(print_str)
 
         return word_perplexity
+
+    def calculate_scores(self, generated_sentences, target_sentences):
+        bleus = []
+        sequences = []
+        levenshteins = []
+        for generated_tensor, target_tensor in zip(generated_sentences, target_sentences):
+            target = self.vocab.decode(target_tensor)
+            generated = '\n'.join([self.vocab.decode(sent) for sent in generated_tensor])
+
+            bleus.append(similarity_scorer.get_bleu_score(generated, target))
+            sequences.append(similarity_scorer.get_sequence_matcher_score(generated, target))
+            levenshteins.append(similarity_scorer.get_levenshtein_score(generated, target))
+        return {"bleus": bleus, "sequences": sequences, "levenshteins": levenshteins}
 
 
 def get_type():
