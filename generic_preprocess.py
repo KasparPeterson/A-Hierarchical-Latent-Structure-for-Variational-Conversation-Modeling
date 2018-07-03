@@ -8,10 +8,10 @@ from tqdm import tqdm
 
 project_dir = Path(__file__).resolve().parent
 datasets_dir = project_dir.joinpath('datasets/')
-cornell_dir = datasets_dir.joinpath('trump/')
+data_dir = datasets_dir.joinpath('daily-conversations/')
 
-INPUT_FILE = "datasets/trump/trump_dirty.txt"
-OUTPUT_FILE = "datasets/trump/trump_cleaned.txt"
+INPUT_FILE = "datasets/daily-conversations/daily_conversations.txt"
+OUTPUT_FILE = "datasets/daily-conversations/daily_conversations_cleaned.txt"
 GROUP_BY = 3
 
 tokenizer = Tokenizer('spacy')
@@ -42,6 +42,21 @@ def get_conversations():
     return result
 
 
+def get_conversations_with_contexts():
+    result = []
+    conversation = []
+    last = ""
+    with open(INPUT_FILE, "r") as f:
+        for line in f:
+            line = line.replace("\n", "")
+            if len(line) > 0:
+                conversation.append(line)
+            else:
+                result.append(conversation)
+                conversation = []
+    return result
+
+
 def to_pickle(obj, path):
     with open(path, 'wb') as f:
         pickle.dump(obj, f)
@@ -59,7 +74,7 @@ if __name__ == '__main__':
     min_freq = 5
     n_workers = os.cpu_count()
 
-    conversations = get_conversations()
+    conversations = get_conversations_with_contexts()
     with open(OUTPUT_FILE, "w") as f:
         for c in conversations:
             f.write("%s\n" % c)
@@ -68,7 +83,7 @@ if __name__ == '__main__':
 
     for split_type, conv_objects in [('train', train), ('valid', valid), ('test', test)]:
         print('Processing', split_type, 'dataset...')
-        split_data_dir = cornell_dir.joinpath(split_type)
+        split_data_dir = data_dir.joinpath(split_type)
         split_data_dir.mkdir(exist_ok=True)
 
         print('Tokenize.. (n_workers=', n_workers, ')')
@@ -102,6 +117,6 @@ if __name__ == '__main__':
             vocab.update(max_size=max_vocab_size, min_freq=min_freq)
 
             print('Vocabulary size: ', len(vocab))
-            vocab.pickle(cornell_dir.joinpath('word2id.pkl'), cornell_dir.joinpath('id2word.pkl'))
+            vocab.pickle(data_dir.joinpath('word2id.pkl'), data_dir.joinpath('id2word.pkl'))
 
     print('Done!')
